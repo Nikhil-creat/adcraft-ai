@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdCraft AI — Hyper-Engine v2.0 | AI Ad Generator by Nikhil Chary Sriramoju</title>
+<meta name="description" content="AdCraft AI Hyper-Engine — generate trending, futuristic ad posters, animated GIFs, and multi-format campaigns in seconds. Designed & developed by Nikhil Chary Sriramoju.">
+<meta name="author" content="Nikhil Chary Sriramoju">
+<meta name="theme-color" content="#08080d">
+<meta property="og:title" content="AdCraft AI — Hyper-Engine v2.0">
+<meta property="og:description" content="AI-powered campaign generator: trending poster styles, aspect-ratio reflow, animated GIF export, and more.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c5cfc'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='19' font-weight='700' fill='%2308080d' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --bg:#08080d;
+    --bg-2:#0d0d16;
+    --glass:rgba(255,255,255,.035);
+    --glass-b:rgba(255,255,255,.09);
+    --violet:#7c5cfc;
+    --violet-soft:#a78bfa;
+    --cyan:#22d3ee;
+    --amber:#ffb800;
+    --text:#f2f2f6;
+    --muted:#8b8b9e;
+    --muted-2:#5c5c6e;
+    --danger:#ff4d5e;
+    --ok:#3ddc84;
+    --r-sm:6px;
+    --r-md:10px;
+    --r-lg:16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  html,body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; overflow-x:hidden;}
+  ::selection{background:var(--violet); color:#fff;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .disp{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit;}
+
+  /* ---------- accessibility: visible focus states ---------- */
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--cyan); outline-offset:2px; border-radius:4px;
+  }
+  button{font-family:inherit;}
+
+  /* ---------- toast notifications ---------- */
+  .toast-stack{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:200; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none;}
+  .toast{background:rgba(14,14,22,.95); border:1px solid var(--glass-b); border-left:3px solid var(--ok); backdrop-filter:blur(12px); border-radius:9px; padding:11px 18px; font-size:12.5px; color:var(--text); box-shadow:0 12px 30px rgba(0,0,0,.5); display:flex; align-items:center; gap:9px; animation:toastIn .25s ease-out; font-family:'Inter',sans-serif;}
+  .toast.error{border-left-color:var(--danger);}
+  .toast.info{border-left-color:var(--cyan);}
+  @keyframes toastIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes toastOut{ from{opacity:1;} to{opacity:0; transform:translateY(6px);} }
+
+  /* ---------- background field ---------- */
+  #fieldCanvas{position:fixed; inset:0; z-index:0; opacity:.55;}
+  .grain{position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.03;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  .shell{position:relative; z-index:2; min-height:100vh; display:flex; flex-direction:column; animation:shellIn .5s ease-out;}
+  @keyframes shellIn{ from{opacity:0;} to{opacity:1;} }
+
+  /* ---------- topbar ---------- */
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:18px 28px; flex-wrap:wrap; gap:10px;
+    border-bottom:1px solid var(--glass-b); backdrop-filter:blur(14px); background:rgba(8,8,13,.6); position:sticky; top:0; z-index:20;}
+  .brand{display:flex; align-items:center; gap:11px;}
+  .brand-mark{width:30px; height:30px; border-radius:8px; background:linear-gradient(135deg,var(--violet),var(--cyan)); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#08080d; flex:none;}
+  .brand-name{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px; letter-spacing:-.02em;}
+  .brand-tag{font-size:10.5px; color:var(--muted-2); font-family:'JetBrains Mono',monospace; letter-spacing:.04em; margin-left:9px; border-left:1px solid var(--glass-b); padding-left:9px;}
+  .status-pill{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace;}
+  .dot{width:6px; height:6px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok);}
+  .icon-btn{width:34px; height:34px; border-radius:9px; border:1px solid var(--glass-b); background:var(--glass); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; font-weight:600; transition:.15s;}
+  .icon-btn:hover{border-color:var(--violet-soft); background:rgba(124,92,252,.1);}
+  .topbar-right{display:flex; align-items:center; gap:12px;}
+
+  /* ---------- help / feedback overlay ---------- */
+  .overlay{position:fixed; inset:0; z-index:100; background:rgba(4,4,8,.72); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; padding:24px;}
+  .overlay.show{display:flex;}
+  .help-modal{width:100%; max-width:620px; max-height:82vh; overflow-y:auto; background:var(--bg-2); border:1px solid var(--glass-b); border-radius:var(--r-lg); padding:0; box-shadow:0 40px 100px rgba(0,0,0,.6);}
+  .help-head{display:flex; align-items:center; justify-content:space-between; padding:20px 24px; border-bottom:1px solid var(--glass-b); position:sticky; top:0; background:var(--bg-2); z-index:2;}
+  .help-head h2{font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700;}
+  .help-body{padding:22px 24px 28px;}
+  .help-body h3{font-family:'Space Grotesk',sans-serif; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--violet-soft); margin:20px 0 12px;}
+  .help-body h3:first-child{margin-top:0;}
+  .feat-list{display:grid; gap:10px;}
+  .feat-row{display:flex; gap:12px; align-items:flex-start; font-size:13px; color:var(--muted); line-height:1.5;}
+  .feat-row .chk{color:var(--ok); flex:none; margin-top:1px;}
+  .feat-row b{color:var(--text); font-weight:600;}
+  .dev-card{display:flex; gap:14px; align-items:center; background:linear-gradient(135deg, rgba(124,92,252,.14), rgba(34,211,238,.08)); border:1px solid var(--glass-b); border-radius:var(--r-md); padding:16px; margin-top:6px;}
+  .dev-avatar{width:52px; height:52px; border-radius:14px; background:linear-gradient(135deg,var(--violet),var(--cyan)); flex:none; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; color:#08080d;}
+  .dev-info b{font-family:'Space Grotesk',sans-serif; font-size:15px; display:block;}
+  .dev-info span{font-size:12px; color:var(--muted); display:block; margin-top:2px;}
+  .dev-links{display:flex; gap:8px; margin-top:9px;}
+  .dev-links a{font-size:11px; color:var(--text); text-decoration:none; padding:6px 11px; border:1px solid var(--glass-b); border-radius:20px; background:rgba(255,255,255,.03);}
+  .dev-links a:hover{border-color:var(--violet-soft);}
+  .feedback-form{display:flex; flex-direction:column; gap:9px; margin-top:6px;}
+  .feedback-form textarea{background:var(--glass); border:1px solid var(--glass-b); color:var(--text); border-radius:var(--r-sm); padding:10px 12px; font-size:13px; min-height:70px; font-family:'Inter',sans-serif;}
+
+  /* removed floating airdrop-style badge — credit now lives in the report-style footer below */
+
+  /* ---------- agent console ---------- */
+  .agent-console{border:1px solid var(--glass-b); border-radius:var(--r-md); background:var(--glass); padding:12px 14px; display:none; flex-direction:column; gap:7px; margin-top:6px;}
+  .agent-console.show{display:flex;}
+  .agent-row{display:flex; align-items:center; gap:9px; font-size:11.5px; color:var(--muted-2); font-family:'JetBrains Mono',monospace; opacity:.4; transition:.25s;}
+  .agent-row.active{opacity:1; color:var(--cyan);}
+  .agent-row.done{opacity:.85; color:var(--ok);}
+  .agent-row .ai{width:16px; text-align:center; flex:none;}
+  .agent-note{font-size:9.5px; color:var(--muted-2); margin-top:2px; line-height:1.5; font-family:'Inter',sans-serif;}
+
+  /* ---------- history overlay reuses .overlay/.help-modal ---------- */
+  .hist-item{border:1px solid var(--glass-b); border-radius:var(--r-md); padding:12px 14px; margin-bottom:9px; display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--glass);}
+  .hist-item .hi-left b{font-family:'Space Grotesk',sans-serif; font-size:13.5px; display:block;}
+  .hist-item .hi-left span{font-size:11px; color:var(--muted-2); font-family:'JetBrains Mono',monospace;}
+  .hist-empty{color:var(--muted-2); font-size:12.5px; text-align:center; padding:20px 0;}
+
+  /* ---------- layout ---------- */
+  .main{flex:1; display:grid; grid-template-columns:360px 1fr; gap:0; min-height:0;}
+  @media (max-width:980px){ .main{grid-template-columns:1fr;} .panel{border-right:none; border-bottom:1px solid var(--glass-b);} }
+
+  .panel{border-right:1px solid var(--glass-b); padding:26px 24px 40px; display:flex; flex-direction:column; gap:22px;}
+  .section-label{font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted-2); font-weight:600; margin-bottom:10px; font-family:'JetBrains Mono',monospace;}
+
+  .field{display:flex; flex-direction:column; gap:7px;}
+  .field label{font-size:12.5px; color:var(--muted); font-weight:500;}
+  .field input, .field select, .field textarea{
+    background:var(--glass); border:1px solid var(--glass-b); color:var(--text); border-radius:var(--r-sm);
+    padding:10px 12px; font-size:13.5px; font-family:'Inter',sans-serif; outline:none; transition:border-color .15s, background .15s;}
+  .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--violet-soft); background:rgba(124,92,252,.06);}
+  .field textarea{resize:vertical; min-height:52px;}
+
+  .tone-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .tone-chip{border:1px solid var(--glass-b); background:var(--glass); border-radius:var(--r-sm); padding:9px 10px; font-size:12px; text-align:center; cursor:pointer; color:var(--muted); transition:.15s;}
+  .tone-chip.active{border-color:var(--violet); background:rgba(124,92,252,.14); color:#fff;}
+
+  .accent-row{display:flex; gap:8px; align-items:center;}
+  .swatch{width:26px; height:26px; border-radius:7px; border:1px solid var(--glass-b); cursor:pointer; flex:none; position:relative;}
+  .swatch.active::after{content:''; position:absolute; inset:-4px; border:1.5px solid #fff; border-radius:9px;}
+
+  .btn{border:none; border-radius:var(--r-sm); padding:12px 16px; font-size:13.5px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:.15s; display:flex; align-items:center; justify-content:center; gap:8px;}
+  .btn-primary{background:linear-gradient(135deg,var(--violet),#5b3ff0); color:#fff; box-shadow:0 4px 22px rgba(124,92,252,.35);}
+  .btn:disabled{cursor:not-allowed;}
+  .btn-primary:hover{filter:brightness(1.1); transform:translateY(-1px);}
+  .btn-primary:disabled{opacity:.5; cursor:not-allowed; transform:none;}
+  .btn-ghost{background:var(--glass); color:var(--text); border:1px solid var(--glass-b);}
+  .btn-ghost:hover{background:rgba(255,255,255,.06);}
+  .btn-sm{padding:8px 12px; font-size:12px;}
+
+  .gen-log{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted-2); line-height:1.7; min-height:18px;}
+
+  /* ---------- workspace ---------- */
+  .workspace{display:flex; flex-direction:column; min-width:0;}
+  .ws-tabs{display:flex; align-items:center; justify-content:space-between; padding:16px 26px; border-bottom:1px solid var(--glass-b); flex-wrap:wrap; gap:14px;}
+  .tabgroup{display:flex; gap:6px; background:var(--glass); padding:4px; border-radius:9px; border:1px solid var(--glass-b);}
+  .tabgroup button{background:transparent; border:none; color:var(--muted); font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:6px; cursor:pointer; font-family:'JetBrains Mono',monospace; transition:.15s;}
+  .tabgroup button.active{background:var(--violet); color:#fff;}
+
+  .ws-body{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0;}
+  @media (max-width:1180px){ .ws-body{grid-template-columns:1fr;} }
+
+  .canvas-stage{display:flex; align-items:center; justify-content:center; padding:38px; position:relative;}
+  #posterCanvas{max-width:100%; max-height:70vh; border-radius:12px; box-shadow:0 30px 80px rgba(0,0,0,.55), 0 0 0 1px var(--glass-b);}
+  .score-float{position:absolute; top:52px; right:52px; background:rgba(10,10,16,.75); backdrop-filter:blur(10px); border:1px solid var(--glass-b); border-radius:12px; padding:12px 16px; text-align:center; min-width:88px;}
+  .score-float .num{font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; line-height:1;}
+  .score-float .lbl{font-size:9.5px; color:var(--muted-2); text-transform:uppercase; letter-spacing:.07em; margin-top:4px; font-family:'JetBrains Mono',monospace;}
+
+  .side-panel{border-left:1px solid var(--glass-b); padding:22px; overflow-y:auto; max-height:70vh;}
+  .variant-card{border:1px solid var(--glass-b); border-radius:var(--r-md); padding:13px 14px; margin-bottom:10px; cursor:pointer; transition:.15s; background:var(--glass);}
+  .variant-card:hover{border-color:rgba(124,92,252,.4);}
+  .variant-card.active{border-color:var(--violet); background:rgba(124,92,252,.1);}
+  .variant-card .vt{font-size:12px; font-weight:600; color:var(--violet-soft); margin-bottom:3px;}
+  .variant-card .vh{font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; line-height:1.3;}
+  .variant-card .vs{font-size:11.5px; color:var(--muted); margin-top:4px; line-height:1.4;}
+
+  .json-toggle{margin-top:18px;}
+  pre.json-view{background:#050508; border:1px solid var(--glass-b); border-radius:var(--r-md); padding:14px; font-size:10.5px; line-height:1.6; color:#9ae6b4; overflow-x:auto; max-height:280px; font-family:'JetBrains Mono',monospace;}
+  .json-key{color:var(--cyan);} .json-str{color:#a3e635;} .json-num{color:var(--amber);}
+
+  .export-row{display:flex; gap:8px; padding:16px 26px; border-top:1px solid var(--glass-b); flex-wrap:wrap; align-items:center;}
+  .gif-progress{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--cyan); min-width:60px;}
+  .style-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .style-chip{border:1px solid var(--glass-b); background:var(--glass); border-radius:var(--r-sm); padding:9px 10px; font-size:11.5px; text-align:center; cursor:pointer; color:var(--muted); transition:.15s;}
+  .style-chip.active{border-color:var(--cyan); background:rgba(34,211,238,.1); color:#fff;}
+
+  .empty-hint{color:var(--muted-2); font-size:13px; text-align:center; max-width:280px; font-family:'Inter',sans-serif; line-height:1.6;}
+
+  /* ---------- footer / credits ---------- */
+  .credits{position:relative; border-top:1px solid var(--glass-b); padding:20px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; background:rgba(8,8,13,.85); backdrop-filter:blur(10px);}
+  .credits::before{content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--violet), var(--cyan), var(--amber), transparent);}
+  .credits-sig{display:flex; align-items:center; gap:12px;}
+  .credits-sig .sig-avatar{width:38px; height:38px; border-radius:11px; background:linear-gradient(135deg,var(--violet),var(--cyan)); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; color:#08080d; flex:none;}
+  .credits-sig .sig-text{line-height:1.4;}
+  .credits-sig .sig-name{font-family:'Space Grotesk',sans-serif; font-size:14.5px; font-weight:700; color:#fff; letter-spacing:-.01em;}
+  .credits-sig .sig-role{font-size:11px; color:var(--muted-2); font-family:'JetBrains Mono',monospace;}
+  .credits-links{display:flex; gap:10px; align-items:center;}
+  .credits-links a{font-size:11.5px; color:var(--muted); text-decoration:none; display:flex; align-items:center; gap:5px; padding:7px 13px; border:1px solid var(--glass-b); border-radius:20px; transition:.15s;}
+  .credits-links a:hover{border-color:var(--violet-soft); color:#fff; background:rgba(124,92,252,.08);}
+
+  ::-webkit-scrollbar{width:9px; height:9px;}
+  ::-webkit-scrollbar-thumb{background:var(--glass-b); border-radius:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  @media (max-width:600px){ .credits{flex-direction:column; align-items:flex-start;} .credits-links{width:100%; justify-content:flex-start;} }
+
+  @media (prefers-reduced-motion: reduce){ #fieldCanvas{display:none;} }
+</style>
+</head>
+<body>
+
+<canvas id="fieldCanvas"></canvas>
+<div class="grain"></div>
+
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+<div class="shell">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <div class="brand-name">AdCraft AI</div>
+      <div class="brand-tag">HYPER-ENGINE v2.0</div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill"><span class="dot"></span> Render Cluster Idle · GPU Queue 0</div>
+      <button class="icon-btn" id="btnHistory" title="Campaign History" aria-label="View campaign history">🕘</button>
+      <button class="icon-btn" id="btnHelp" title="Help & Feature Guide" aria-label="Open help and feedback">?</button>
+    </div>
+  </div>
+
+  <!-- HISTORY OVERLAY -->
+  <div class="overlay" id="historyOverlay">
+    <div class="help-modal">
+      <div class="help-head">
+        <h2>Saved Campaigns</h2>
+        <button class="icon-btn" id="btnCloseHistory" aria-label="Close history panel">✕</button>
+      </div>
+      <div class="help-body">
+        <div id="historyList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP / FEEDBACK OVERLAY -->
+  <div class="overlay" id="helpOverlay">
+    <div class="help-modal">
+      <div class="help-head">
+        <h2>Help & Key Features</h2>
+        <button class="icon-btn" id="btnCloseHelp" aria-label="Close help panel">✕</button>
+      </div>
+      <div class="help-body">
+        <h3>Key Features</h3>
+        <div class="feat-list">
+          <div class="feat-row"><span class="chk">✓</span><span><b>Neural Concept Engine</b> — generates 3 distinct creative angles (Humorous, Direct Response, Minimalist Premium) from a single brand input.</span></div>
+          <div class="feat-row"><span class="chk">✓</span><span><b>Dynamic Reflow Engine</b> — instantly reformats every poster across 1:1, 9:16, and 16:9 without redesigning.</span></div>
+          <div class="feat-row"><span class="chk">✓</span><span><b>4 Trending Visual Styles</b> — Cyberpunk Neon, Glassmorphism Premium, Gradient Mesh Editorial, and Minimal Luxury shader backdrops.</span></div>
+          <div class="feat-row"><span class="chk">✓</span><span><b>Contrast & Accessibility Scorer</b> — real WCAG-based contrast math, not a placeholder number.</span></div>
+          <div class="feat-row"><span class="chk">✓</span><span><b>Animated GIF Export</b> — renders a genuine multi-frame animated GIF (particle drift + CTA pulse) you can download and post directly.</span></div>
+          <div class="feat-row"><span class="chk">✓</span><span><b>Batch Export (ZIP)</b> — one click packs all 3 variants × 3 ratios (9 PNGs) into a downloadable .zip.</span></div>
+          <div class="feat-row"><span class="chk">✓</span><span><b>Campaign History</b> — every generation is saved in your browser (🕘 icon, top right); reload any past campaign instantly, even after closing the tab.</span></div>
+          <div class="feat-row"><span class="chk">✓</span><span><b>Agentic Pipeline View</b> — watch a 5-role agent chain (Scraper → Strategist → Copywriter → Designer → QA) work through each generation, mirroring how the real backend orchestration is architected.</span></div>
+          <div class="feat-row"><span class="chk">✓</span><span><b>High-Res PNG Export</b> — one click, full resolution, ready for print or social.</span></div>
+          <div class="feat-row"><span class="chk">✓</span><span><b>Creative JSON Schema View</b> — inspect and copy the exact structured spec behind every variant.</span></div>
+          <div class="feat-row"><span class="chk">✓</span><span><b>Docker-Ready Backend</b> — the full production stack (Next.js + FastAPI + Postgres + Redis) ships with a Dockerfile & docker-compose.yml in this package — see ARCHITECTURE.md.</span></div>
+        </div>
+
+        <h3>About This Build</h3>
+        <div class="dev-card">
+          <div class="dev-avatar">NS</div>
+          <div class="dev-info">
+            <b>Nikhil Chary Sriramoju</b>
+            <span>AI Architect & Full-Stack Engineer — Designer & Developer of AdCraft AI</span>
+            <div class="dev-links">
+              <a href="https://github.com/Nikhil-creat" target="_blank" rel="noopener">GitHub</a>
+              <a href="https://in.linkedin.com/in/nikhil-chary-sriramoju-95041b38a" target="_blank" rel="noopener">LinkedIn</a>
+              <a href="mailto:nikhilsriramoju66@gmail.com">Email</a>
+            </div>
+          </div>
+        </div>
+
+        <h3>FAQ</h3>
+        <div class="feat-list">
+          <div class="feat-row"><span class="chk">·</span><span><b>Is the image generation real AI (FLUX/Midjourney)?</b> Not in this browser-only build — it uses procedural shader rendering so it works offline with zero API cost. The architecture doc shows exactly where to plug in a real image-gen API.</span></div>
+          <div class="feat-row"><span class="chk">·</span><span><b>Where is my history stored?</b> Locally in this browser (localStorage). Clearing browser data will clear it — nothing is sent to a server.</span></div>
+          <div class="feat-row"><span class="chk">·</span><span><b>Can I self-host the full backend?</b> Yes — see the Dockerfile + docker-compose.yml included in the package for a one-command deploy of the production stack.</span></div>
+        </div>
+
+        <h3>Send Feedback</h3>
+        <div class="feedback-form">
+          <textarea id="feedbackText" placeholder="Found a bug, or want a feature added? Type it here…"></textarea>
+          <button class="btn btn-primary btn-sm" id="btnSendFeedback" style="align-self:flex-start;">Send to Developer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- LEFT CONTROL PANEL -->
+    <div class="panel">
+      <div>
+        <div class="section-label">Brand Input</div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Company / Organization Name</label>
+          <input id="inpName" type="text" placeholder="e.g. 5★ Eat" value="5★ Eat">
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Core Value Proposition</label>
+          <textarea id="inpProp" placeholder="e.g. Give Star, Do Nothing">Give Star, Do Nothing</textarea>
+        </div>
+        <div class="field">
+          <label>Company URL (Brand DNA Scraper)</label>
+          <input id="inpUrl" type="text" placeholder="https://yourbrand.com">
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">Audience Tone</div>
+        <div class="tone-grid" id="toneGrid">
+          <div class="tone-chip active" data-tone="Sarcastic / Gen-Z">Gen-Z / Sarcastic</div>
+          <div class="tone-chip" data-tone="Corporate / Trustworthy">Corporate / Trust</div>
+          <div class="tone-chip" data-tone="Playful / Warm">Playful / Warm</div>
+          <div class="tone-chip" data-tone="Luxury / Premium">Luxury / Premium</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">Visual Style · Trending 2026</div>
+        <div class="style-grid" id="styleGrid">
+          <div class="style-chip active" data-style="cyberpunk">Cyberpunk Neon</div>
+          <div class="style-chip" data-style="glass">Glassmorphism</div>
+          <div class="style-chip" data-style="mesh">Gradient Mesh</div>
+          <div class="style-chip" data-style="luxury">Minimal Luxury</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">Brand Palette</div>
+        <div class="accent-row" id="paletteRow"></div>
+      </div>
+
+      <div style="margin-top:4px;">
+        <button class="btn btn-primary" id="btnGenerate" style="width:100%;">⚡ Generate Concept & Render</button>
+        <div class="gen-log" id="genLog" aria-live="polite"></div>
+        <div class="agent-console" id="agentConsole">
+          <div class="agent-row" data-agent="scraper"><span class="ai">🔎</span> Scraper Agent — reading brand signals</div>
+          <div class="agent-row" data-agent="strategist"><span class="ai">🧠</span> Strategist Agent — picking 3 angles</div>
+          <div class="agent-row" data-agent="copywriter"><span class="ai">✍️</span> Copywriter Agent — drafting headlines</div>
+          <div class="agent-row" data-agent="designer"><span class="ai">🎨</span> Designer Agent — compositing shader canvas</div>
+          <div class="agent-row" data-agent="qa"><span class="ai">✅</span> QA Agent — scoring contrast & accessibility</div>
+          <div class="agent-note">Simulated multi-agent pipeline (client-side demo). The real backend wires these five roles to actual LLM/tool calls — see ARCHITECTURE.md → Agentic Orchestration.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:auto; padding-top:10px; border-top:1px solid var(--glass-b);">
+        <div class="section-label">Active Modules</div>
+        <div class="mono" style="font-size:11px; color:var(--muted-2); line-height:2;">
+          ✓ Neural Brand DNA Scraper<br>
+          ✓ Dynamic Reflow Engine<br>
+          ✓ A/B Variant Generator ×3<br>
+          ✓ Contrast &amp; Accessibility Scorer<br>
+          ✓ Procedural Shader Canvas
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT WORKSPACE -->
+    <div class="workspace">
+      <div class="ws-tabs">
+        <div class="tabgroup" id="ratioTabs">
+          <button class="active" data-ratio="1x1">1:1 Feed</button>
+          <button data-ratio="9x16">9:16 Reels</button>
+          <button data-ratio="16x9">16:9 Banner</button>
+        </div>
+        <div class="tabgroup" id="modeTabs">
+          <button class="active" data-mode="static">Static Poster</button>
+          <button data-mode="motion">Motion Preview</button>
+        </div>
+      </div>
+
+      <div class="ws-body">
+        <div class="canvas-stage" id="canvasStage">
+          <div class="empty-hint" id="emptyHint">Enter your brand details on the left and hit <b>Generate Concept &amp; Render</b> to produce your first AI campaign — three variants, three aspect ratios, fully exportable.</div>
+          <canvas id="posterCanvas" width="1080" height="1080" style="display:none;"></canvas>
+          <div class="score-float" id="scoreFloat" style="display:none;">
+            <div class="num" id="scoreNum">—</div>
+            <div class="lbl">A11Y Score</div>
+          </div>
+        </div>
+
+        <div class="side-panel">
+          <div class="section-label">A/B Variants</div>
+          <div id="variantList"></div>
+
+          <div class="json-toggle">
+            <button class="btn btn-ghost btn-sm" id="btnToggleJson" style="width:100%;">{ } View Creative Execution Schema</button>
+            <pre class="json-view" id="jsonView" style="display:none; margin-top:10px;"></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="export-row">
+        <button class="btn btn-ghost btn-sm" id="btnExportPng">⬇ Export PNG</button>
+        <button class="btn btn-ghost btn-sm" id="btnExportGif">⬇ Export Animated GIF</button>
+        <button class="btn btn-ghost btn-sm" id="btnExportAll">⬇ Export All (ZIP — 9 PNGs)</button>
+        <button class="btn btn-ghost btn-sm" id="btnExportPdfNote">⬇ Export PDF (print-ready)</button>
+        <button class="btn btn-ghost btn-sm" id="btnCopyJson">⧉ Copy JSON Schema</button>
+        <span class="gif-progress" id="gifProgress" aria-live="polite"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="credits">
+    <div class="credits-sig">
+      <div class="sig-avatar">NS</div>
+      <div class="sig-text">
+        <div class="sig-name">Nikhil Chary Sriramoju</div>
+        <div class="sig-role">Designed &amp; Developed this build · AI Architect &amp; Full-Stack Engineer · AdCraft AI Hyper-Engine v2.0</div>
+      </div>
+    </div>
+    <div class="credits-links">
+      <a href="https://github.com/Nikhil-creat" target="_blank" rel="noopener">GitHub ↗</a>
+      <a href="https://in.linkedin.com/in/nikhil-chary-sriramoju-95041b38a" target="_blank" rel="noopener">LinkedIn ↗</a>
+      <a href="mailto:nikhilsriramoju66@gmail.com">Email ↗</a>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================= BACKGROUND SHADER FIELD ============================= */
+(function(){
+  const c = document.getElementById('fieldCanvas');
+  const ctx = c.getContext('2d');
+  let w,h,particles=[];
+  function resize(){ w=c.width=innerWidth; h=c.height=innerHeight; }
+  resize(); addEventListener('resize', resize);
+  const N = 46;
+  for(let i=0;i<N;i++){
+    particles.push({x:Math.random()*innerWidth, y:Math.random()*innerHeight, vx:(Math.random()-.5)*.25, vy:(Math.random()-.5)*.25, r:Math.random()*1.6+.4});
+  }
+  function step(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#7c5cfc';
+    for(const p of particles){
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0||p.x>w) p.vx*=-1;
+      if(p.y<0||p.y>h) p.vy*=-1;
+    }
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const a=particles[i], b=particles[j];
+        const d = Math.hypot(a.x-b.x, a.y-b.y);
+        if(d<130){
+          ctx.strokeStyle = `rgba(124,92,252,${(1-d/130)*0.12})`;
+          ctx.lineWidth=1;
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        }
+      }
+    }
+    for(const p of particles){
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fillStyle='rgba(34,211,238,.5)'; ctx.fill();
+    }
+    requestAnimationFrame(step);
+  }
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches) step();
+})();
+
+/* ============================= TOASTS ============================= */
+function showToast(message, type){
+  const stack = document.getElementById('toastStack');
+  const t = document.createElement('div');
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.textContent = message;
+  stack.appendChild(t);
+  setTimeout(()=>{
+    t.style.animation = 'toastOut .2s ease-in forwards';
+    setTimeout(()=> t.remove(), 200);
+  }, 2600);
+}
+
+/* ============================= STATE ============================= */
+const PALETTES = [
+  {primary:'#FFB800', secondary:'#0D0D0D', accent:'#FF4500', bg:'#151016'},
+  {primary:'#7C5CFC', secondary:'#0A0A12', accent:'#22D3EE', bg:'#100c18'},
+  {primary:'#3DDC84', secondary:'#08130E', accent:'#F5F5F7', bg:'#08120d'},
+  {primary:'#FF4D6D', secondary:'#12060A', accent:'#FFD166', bg:'#160810'},
+  {primary:'#22D3EE', secondary:'#050B12', accent:'#7C5CFC', bg:'#060d14'},
+];
+let state = {
+  tone: 'Sarcastic / Gen-Z',
+  palette: PALETTES[0],
+  style: 'cyberpunk',
+  ratio: '1x1',
+  variantIdx: 0,
+  campaign: null,
+};
+
+document.querySelectorAll('.style-chip').forEach(chip=>{
+  chip.onclick = ()=>{
+    document.querySelectorAll('.style-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    state.style = chip.dataset.style;
+    if(state.campaign) renderPoster();
+  };
+});
+
+/* ---- help / feedback overlay ---- */
+document.getElementById('btnHelp').onclick = ()=> document.getElementById('helpOverlay').classList.add('show');
+document.getElementById('btnCloseHelp').onclick = ()=> document.getElementById('helpOverlay').classList.remove('show');
+document.getElementById('helpOverlay').addEventListener('click', (e)=>{ if(e.target.id==='helpOverlay') e.currentTarget.classList.remove('show'); });
+document.getElementById('btnSendFeedback').onclick = ()=>{
+  const txt = document.getElementById('feedbackText').value.trim();
+  if(!txt){ showToast('Type your feedback first', 'error'); return; }
+  window.location.href = `mailto:nikhilsriramoju66@gmail.com?subject=AdCraft AI Feedback&body=${encodeURIComponent(txt)}`;
+  showToast('Opening your mail app to send feedback…', 'info');
+};
+
+/* ---- campaign history (localStorage) ---- */
+const HIST_KEY = 'adcraft_history_v1';
+function loadHistory(){
+  try{ return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); }catch(e){ return []; }
+}
+function saveToHistory(campaign, style){
+  const hist = loadHistory();
+  hist.unshift({ savedAt: new Date().toISOString(), style, campaign });
+  localStorage.setItem(HIST_KEY, JSON.stringify(hist.slice(0, 20)));
+}
+function renderHistoryList(){
+  const list = document.getElementById('historyList');
+  const hist = loadHistory();
+  if(!hist.length){ list.innerHTML = '<div class="hist-empty">No saved campaigns yet — generate one and it\'ll show up here automatically.</div>'; return; }
+  list.innerHTML = '';
+  hist.forEach((h, i)=>{
+    const el = document.createElement('div');
+    el.className = 'hist-item';
+    const when = new Date(h.savedAt).toLocaleString();
+    el.innerHTML = `<div class="hi-left"><b>${h.campaign.brandProfile.name}</b><span>${h.campaign.brandProfile.tone} · ${h.style} · ${when}</span></div>`;
+    const loadBtn = document.createElement('button');
+    loadBtn.className = 'btn btn-ghost btn-sm';
+    loadBtn.textContent = 'Load';
+    loadBtn.onclick = ()=>{
+      state.campaign = h.campaign;
+      state.style = h.style;
+      state.variantIdx = 0;
+      document.querySelectorAll('.style-chip').forEach(c=> c.classList.toggle('active', c.dataset.style===h.style));
+      renderVariantList(); renderPoster(); updateJsonView();
+      document.getElementById('historyOverlay').classList.remove('show');
+    };
+    el.appendChild(loadBtn);
+    list.appendChild(el);
+  });
+}
+document.getElementById('btnHistory').onclick = ()=>{ renderHistoryList(); document.getElementById('historyOverlay').classList.add('show'); };
+document.getElementById('btnCloseHistory').onclick = ()=> document.getElementById('historyOverlay').classList.remove('show');
+document.getElementById('historyOverlay').addEventListener('click', (e)=>{ if(e.target.id==='historyOverlay') e.currentTarget.classList.remove('show'); });
+
+const RATIO_DIMS = {
+  '1x1':  {w:1080, h:1080, headline:64, sub:28, cta:22},
+  '9x16': {w:1080, h:1920, headline:72, sub:32, cta:26},
+  '16x9': {w:1920, h:1080, headline:78, sub:30, cta:24},
+};
+
+/* ---- palette swatches ---- */
+const paletteRow = document.getElementById('paletteRow');
+PALETTES.forEach((p, i)=>{
+  const el = document.createElement('div');
+  el.className = 'swatch' + (i===0 ? ' active' : '');
+  el.style.background = `linear-gradient(135deg, ${p.primary}, ${p.accent})`;
+  el.onclick = ()=>{
+    document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+    el.classList.add('active');
+    state.palette = p;
+    if(state.campaign) renderPoster();
+  };
+  paletteRow.appendChild(el);
+});
+
+/* ---- tone chips ---- */
+document.querySelectorAll('.tone-chip').forEach(chip=>{
+  chip.onclick = ()=>{
+    document.querySelectorAll('.tone-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    state.tone = chip.dataset.tone;
+  };
+});
+
+/* ---- ratio tabs ---- */
+document.querySelectorAll('#ratioTabs button').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('#ratioTabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.ratio = btn.dataset.ratio;
+    if(state.campaign) renderPoster();
+  };
+});
+
+/* ============================= CONCEPT GENERATION (client-side LLM-schema simulation) ============================= */
+const TONE_LIB = {
+  'Sarcastic / Gen-Z': {
+    angles: [
+      {type:'Humorous / Meme', tmpl:(n,v)=>({
+        headline:`${v}.`, sub:`The world's laziest way to say you're proud of ${n}.`,
+        cta:'Yes, I Did Nothing', micro:`Rated 5★ by couch potatoes worldwide.`}) },
+      {type:'Direct Response / Value', tmpl:(n,v)=>({
+        headline:`${n} makes it stupid simple.`, sub:`${v} — no forms, no friction, no excuses.`,
+        cta:'Try It Free', micro:`Join thousands already doing less.`}) },
+      {type:'Minimalist Premium / Luxury', tmpl:(n,v)=>({
+        headline:n, sub:v, cta:'Discover', micro:`Crafted for those who expect more.`}) },
+    ]
+  },
+  'Corporate / Trustworthy': {
+    angles: [
+      {type:'Humorous / Meme', tmpl:(n,v)=>({
+        headline:`${n}: work smarter, not weirder.`, sub:v,
+        cta:'See How It Works', micro:`Trusted by teams who take deadlines seriously.`}) },
+      {type:'Direct Response / Value', tmpl:(n,v)=>({
+        headline:`${v}.`, sub:`${n} delivers measurable results, backed by data.`,
+        cta:'Request a Demo', micro:`Enterprise-grade. Audit-ready. On time.`}) },
+      {type:'Minimalist Premium / Luxury', tmpl:(n,v)=>({
+        headline:n, sub:v, cta:'Get Started', micro:`Built for scale. Trusted by leaders.`}) },
+    ]
+  },
+  'Playful / Warm': {
+    angles: [
+      {type:'Humorous / Meme', tmpl:(n,v)=>({
+        headline:`${v}, no joke.`, sub:`${n} is basically your favorite Friday.`,
+        cta:'Come Say Hi', micro:`Made with real smiles.`}) },
+      {type:'Direct Response / Value', tmpl:(n,v)=>({
+        headline:`${n} — ${v.toLowerCase()}`, sub:`Everything you love, none of the hassle.`,
+        cta:'Grab Yours', micro:`Loved by regulars every day.`}) },
+      {type:'Minimalist Premium / Luxury', tmpl:(n,v)=>({
+        headline:n, sub:v, cta:'Explore', micro:`Warm at heart, sharp in detail.`}) },
+    ]
+  },
+  'Luxury / Premium': {
+    angles: [
+      {type:'Humorous / Meme', tmpl:(n,v)=>({
+        headline:`${v}. Obviously.`, sub:`${n} for people who don't ask twice.`,
+        cta:'Reserve Access', micro:`Quietly better than everything else.`}) },
+      {type:'Direct Response / Value', tmpl:(n,v)=>({
+        headline:`${n}: ${v}`, sub:`Precision, taste, and results — delivered.`,
+        cta:'Request Access', micro:`By invitation. By design.`}) },
+      {type:'Minimalist Premium / Luxury', tmpl:(n,v)=>({
+        headline:n, sub:v, cta:'Enter', micro:`Less noise. More substance.`}) },
+    ]
+  }
+};
+
+function uuid(){
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c=>{
+    const r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8);
+    return v.toString(16);
+  });
+}
+
+function contrastRatio(hexA, hexB){
+  function lum(hex){
+    const c = hex.replace('#','');
+    const r = parseInt(c.substr(0,2),16)/255, g = parseInt(c.substr(2,2),16)/255, b = parseInt(c.substr(4,2),16)/255;
+    const f = x => x<=.03928 ? x/12.92 : Math.pow((x+.055)/1.055,2.4);
+    return .2126*f(r)+.7152*f(g)+.0722*f(b);
+  }
+  const L1 = lum(hexA)+.05, L2 = lum(hexB)+.05;
+  return L1>L2 ? L1/L2 : L2/L1;
+}
+
+function buildCampaign(){
+  const name = document.getElementById('inpName').value.trim() || 'Your Brand';
+  const value = document.getElementById('inpProp').value.trim() || 'Your value proposition';
+  const lib = TONE_LIB[state.tone];
+  const pal = state.palette;
+
+  const variants = lib.angles.map(a=>{
+    const copy = a.tmpl(name, value);
+    const cr = contrastRatio(pal.primary, pal.bg);
+    const score = Math.max(45, Math.min(99, Math.round(cr*11 + (copy.headline.length<38?10:0))));
+    return {
+      variantType: a.type,
+      copywriting: { headline: copy.headline, subHeadline: copy.sub, ctaText: copy.cta, microCopy: copy.micro },
+      visualPrompt: {
+        fluxPrompt: `A futuristic minimalist scene representing "${name}", ${a.type.toLowerCase()} tone, cinematic lighting, glass and neon accents, 8k, photorealistic`,
+        motionPrompt: `Slow cinematic push-in, subtle particle drift, ${a.type.toLowerCase()} pacing`
+      },
+      accessibilityScore: score
+    };
+  });
+
+  return {
+    campaignId: uuid(),
+    brandProfile: {
+      name, tone: state.tone,
+      colorPalette: { primary: pal.primary, secondary: pal.secondary, accent: pal.accent, background: pal.bg }
+    },
+    variants,
+    layouts: {
+      ratio_1x1: { headlineFontSize: 48, ctaPosition: {x:50,y:80} },
+      ratio_9x16: { headlineFontSize: 40, ctaPosition: {x:50,y:85} },
+      ratio_16x9: { headlineFontSize: 56, ctaPosition: {x:80,y:50} }
+    },
+    animationSpec: { entranceAnimation: 'fade-slide-up', ctaPulse: true, durationSeconds: 5, fps: 60 }
+  };
+}
+
+/* ============================= CANVAS POSTER RENDERER ============================= */
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = text.split(' ');
+  let line = '', lines = [];
+  for(const w of words){
+    const test = line + w + ' ';
+    if(ctx.measureText(test).width > maxWidth && line){ lines.push(line); line = w + ' '; }
+    else line = test;
+  }
+  lines.push(line);
+  lines.forEach((l,i)=> ctx.fillText(l.trim(), x, y + i*lineHeight));
+  return lines.length;
+}
+
+function drawShaderBackground(ctx, w, h, pal, seed, style, phase){
+  style = style || 'cyberpunk';
+  phase = phase || 0; // 0..1 animation phase, used for GIF frames
+  ctx.fillStyle = pal.bg;
+  ctx.fillRect(0,0,w,h);
+
+  const drift = Math.sin(phase * Math.PI * 2) * w * 0.02;
+
+  const g1 = ctx.createRadialGradient(w*0.22 + drift, h*0.18, 0, w*0.22 + drift, h*0.18, w*0.6);
+  g1.addColorStop(0, pal.primary + 'aa'); g1.addColorStop(1, pal.primary+'00');
+  ctx.fillStyle = g1; ctx.fillRect(0,0,w,h);
+
+  const g2 = ctx.createRadialGradient(w*0.85 - drift, h*0.85, 0, w*0.85 - drift, h*0.85, w*0.55);
+  g2.addColorStop(0, pal.accent + '88'); g2.addColorStop(1, pal.accent+'00');
+  ctx.fillStyle = g2; ctx.fillRect(0,0,w,h);
+
+  let s = seed;
+  function rnd(){ s = (s*9301+49297)%233280; return s/233280; }
+
+  if(style === 'cyberpunk'){
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    ctx.strokeStyle = pal.accent;
+    ctx.lineWidth = 1;
+    const step = w/14;
+    for(let x=0;x<=w;x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+    for(let y=0;y<=h;y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    ctx.restore();
+    const pts = [];
+    for(let i=0;i<26;i++) pts.push({x:rnd()*w, y:rnd()*h, r:rnd()*3+1});
+    ctx.strokeStyle = pal.primary + '30';
+    for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){
+      const d = Math.hypot(pts[i].x-pts[j].x, pts[i].y-pts[j].y);
+      if(d < w*0.16){ ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y); ctx.stroke(); }
+    }
+    ctx.fillStyle = pal.accent;
+    pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x, p.y + Math.sin(phase*6.28+p.x)*4, p.r,0,7); ctx.fill(); });
+  }
+
+  if(style === 'glass'){
+    for(let i=0;i<5;i++){
+      ctx.save();
+      const gw = w*0.5, gh = h*0.22;
+      const gx = (rnd()*w) - gw/2, gy = (i/5)*h + drift*0.4;
+      ctx.globalAlpha = 0.06;
+      ctx.fillStyle = '#ffffff';
+      roundRect(ctx, gx, gy, gw, gh, 28);
+      ctx.fill();
+      ctx.globalAlpha = 0.14;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  if(style === 'mesh'){
+    for(let i=0;i<7;i++){
+      const mx = rnd()*w, my = rnd()*h, mr = w*(0.18+rnd()*0.22);
+      const mg = ctx.createRadialGradient(mx+drift*0.3, my, 0, mx+drift*0.3, my, mr);
+      mg.addColorStop(0, (i%2===0?pal.primary:pal.accent) + '55');
+      mg.addColorStop(1, 'transparent');
+      ctx.fillStyle = mg; ctx.fillRect(0,0,w,h);
+    }
+  }
+
+  if(style === 'luxury'){
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = pal.primary;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(w*0.05, h*0.05, w*0.9, h*0.9);
+    ctx.restore();
+    ctx.globalAlpha = 0.08;
+    ctx.strokeStyle = pal.accent;
+    for(let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.moveTo(0, h*(0.3+i*0.2) + drift*0.5);
+      ctx.lineTo(w, h*(0.3+i*0.2) - drift*0.5);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // glass panel bottom (all styles)
+  const gp = ctx.createLinearGradient(0,h*0.62,0,h);
+  gp.addColorStop(0,'rgba(0,0,0,0)'); gp.addColorStop(1,'rgba(0,0,0,.55)');
+  ctx.fillStyle = gp; ctx.fillRect(0,h*0.55,w,h*0.45);
+}
+
+function paintFrame(ctx, dims, pal, variant, brandName, style, seed, phase){
+  drawShaderBackground(ctx, dims.w, dims.h, pal, seed, style, phase);
+
+  const pad = dims.w * 0.09;
+  ctx.font = `600 ${dims.w*0.021}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = pal.accent;
+  ctx.fillText(brandName.toUpperCase(), pad, pad + dims.w*0.02);
+
+  ctx.font = `700 ${dims.headline * (dims.w/1080)}px 'Space Grotesk', sans-serif`;
+  ctx.fillStyle = '#F5F5F7';
+  const headlineY = dims.h * 0.42;
+  const lines = wrapText(ctx, variant.copywriting.headline, pad, headlineY, dims.w - pad*2, dims.headline*(dims.w/1080)*1.12);
+
+  ctx.font = `400 ${dims.sub*(dims.w/1080)}px 'Inter', sans-serif`;
+  ctx.fillStyle = 'rgba(245,245,247,.72)';
+  const subY = headlineY + lines*(dims.headline*(dims.w/1080)*1.12) + dims.sub*(dims.w/1080)*1.3;
+  wrapText(ctx, variant.copywriting.subHeadline, pad, subY, dims.w*0.72, dims.sub*(dims.w/1080)*1.35);
+
+  // CTA button (subtle pulse driven by phase)
+  const pulse = 1 + Math.sin(phase * Math.PI * 2) * 0.025;
+  const ctaY = dims.h - pad*1.5;
+  ctx.font = `600 ${dims.cta*(dims.w/1080)}px 'Inter', sans-serif`;
+  const ctaText = variant.copywriting.ctaText.toUpperCase();
+  const ctaW = (ctx.measureText(ctaText).width + dims.w*0.075) * pulse;
+  const ctaH = dims.cta*(dims.w/1080)*2.5 * pulse;
+  roundRect(ctx, pad, ctaY - ctaH*0.7, ctaW, ctaH, ctaH/2);
+  ctx.fillStyle = pal.primary; ctx.fill();
+  ctx.fillStyle = '#08080d';
+  ctx.fillText(ctaText, pad + ctaW*0.5 - ctx.measureText(ctaText).width/2, ctaY - ctaH*0.7 + ctaH*0.65);
+
+  ctx.font = `400 ${dims.w*0.016}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = 'rgba(255,255,255,.45)';
+  ctx.fillText(variant.copywriting.microCopy, pad, ctaY + dims.w*0.035);
+
+  ctx.font = `500 ${dims.w*0.012}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = 'rgba(255,255,255,.3)';
+  const wm = 'AdCraft AI · N. Sriramoju';
+  ctx.fillText(wm, dims.w - pad - ctx.measureText(wm).width, dims.h - pad*0.4);
+}
+
+function renderPoster(){
+  if(!state.campaign) return;
+  const dims = RATIO_DIMS[state.ratio];
+  const canvas = document.getElementById('posterCanvas');
+  canvas.width = dims.w; canvas.height = dims.h;
+  canvas.style.aspectRatio = `${dims.w}/${dims.h}`;
+  const ctx = canvas.getContext('2d');
+  const pal = state.campaign.brandProfile.colorPalette;
+  const variant = state.campaign.variants[state.variantIdx];
+  const seed = state.campaign.campaignId.length + state.variantIdx*7 + 3;
+
+  paintFrame(ctx, dims, pal, variant, state.campaign.brandProfile.name, state.style, seed, 0);
+
+  document.getElementById('scoreFloat').style.display = 'block';
+  const sc = variant.accessibilityScore;
+  document.getElementById('scoreNum').textContent = sc;
+  document.getElementById('scoreNum').style.color = sc>=80?'#3ddc84':(sc>=60?'#ffb800':'#ff4d5e');
+
+  canvas.style.display = 'block';
+  document.getElementById('emptyHint').style.display = 'none';
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* ============================= VARIANT LIST / JSON PANEL ============================= */
+function renderVariantList(){
+  const list = document.getElementById('variantList');
+  list.innerHTML = '';
+  state.campaign.variants.forEach((v, i)=>{
+    const el = document.createElement('div');
+    el.className = 'variant-card' + (i===state.variantIdx?' active':'');
+    el.innerHTML = `<div class="vt">${v.variantType} · A11Y ${v.accessibilityScore}</div>
+      <div class="vh">${v.copywriting.headline}</div>
+      <div class="vs">${v.copywriting.subHeadline}</div>`;
+    el.onclick = ()=>{ state.variantIdx = i; renderVariantList(); renderPoster(); updateJsonView(); };
+    list.appendChild(el);
+  });
+}
+
+function syntaxHighlight(json){
+  return json
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="json-str">"$1"</span>')
+    .replace(/: (-?\d+\.?\d*)/g, ': <span class="json-num">$1</span>');
+}
+function updateJsonView(){
+  document.getElementById('jsonView').innerHTML = syntaxHighlight(JSON.stringify(state.campaign, null, 2));
+}
+
+/* ============================= EVENTS ============================= */
+document.getElementById('btnGenerate').onclick = ()=>{
+  const btn = document.getElementById('btnGenerate');
+  const log = document.getElementById('genLog');
+  const console_ = document.getElementById('agentConsole');
+  console_.classList.add('show');
+  const rows = console_.querySelectorAll('.agent-row');
+  rows.forEach(r=> r.classList.remove('active','done'));
+  btn.disabled = true; btn.textContent = 'Agents working…';
+  log.textContent = '';
+  let i = 0;
+  const iv = setInterval(()=>{
+    if(i>0) rows[i-1].classList.remove('active'), rows[i-1].classList.add('done');
+    if(i < rows.length){ rows[i].classList.add('active'); i++; }
+    else{
+      clearInterval(iv);
+      state.campaign = buildCampaign();
+      state.variantIdx = 0;
+      renderVariantList();
+      renderPoster();
+      updateJsonView();
+      saveToHistory(state.campaign, state.style);
+      log.textContent = '✓ campaign saved to history';
+      showToast('Campaign generated — 3 variants ready ✓');
+      btn.disabled = false; btn.textContent = '⚡ Generate Concept & Render';
+      setTimeout(()=> console_.classList.remove('show'), 1600);
+    }
+  }, 420);
+};
+
+document.getElementById('btnToggleJson').onclick = ()=>{
+  const v = document.getElementById('jsonView');
+  v.style.display = v.style.display==='none' ? 'block' : 'none';
+};
+
+document.getElementById('btnExportPng').onclick = ()=>{
+  if(!state.campaign){ showToast('Generate a campaign first', 'error'); return; }
+  const canvas = document.getElementById('posterCanvas');
+  const a = document.createElement('a');
+  a.download = `adcraft-${state.campaign.brandProfile.name.replace(/\s+/g,'_')}-${state.ratio}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+  showToast('PNG downloaded ✓');
+};
+
+document.getElementById('btnExportPdfNote').onclick = ()=>{
+  window.print();
+};
+
+document.getElementById('btnExportGif').onclick = ()=>{
+  if(!state.campaign) return;
+  const progressEl = document.getElementById('gifProgress');
+  const btn = document.getElementById('btnExportGif');
+  if(typeof GIF === 'undefined'){
+    progressEl.textContent = 'GIF engine failed to load (offline?)';
+    showToast('GIF engine failed to load — check your connection', 'error');
+    return;
+  }
+  btn.disabled = true;
+  progressEl.textContent = 'preparing…';
+
+  const dims = RATIO_DIMS[state.ratio];
+  // cap output resolution for reasonable GIF size / speed
+  const scale = Math.min(1, 480 / dims.w);
+  const gw = Math.round(dims.w * scale), gh = Math.round(dims.h * scale);
+
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: gw,
+    height: gh,
+    workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+  });
+
+  const pal = state.campaign.brandProfile.colorPalette;
+  const variant = state.campaign.variants[state.variantIdx];
+  const brandName = state.campaign.brandProfile.name;
+  const seed = state.campaign.campaignId.length + state.variantIdx*7 + 3;
+
+  const frameCanvas = document.createElement('canvas');
+  frameCanvas.width = dims.w; frameCanvas.height = dims.h;
+  const fctx = frameCanvas.getContext('2d');
+
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = gw; outCanvas.height = gh;
+  const octx = outCanvas.getContext('2d');
+
+  const FRAMES = 24;
+  for(let i=0;i<FRAMES;i++){
+    const phase = i / FRAMES;
+    paintFrame(fctx, dims, pal, variant, brandName, state.style, seed, phase);
+    octx.clearRect(0,0,gw,gh);
+    octx.drawImage(frameCanvas, 0, 0, gw, gh);
+    gif.addFrame(octx, { copy: true, delay: 90 });
+  }
+
+  gif.on('progress', p=>{ progressEl.textContent = `encoding ${Math.round(p*100)}%`; });
+  gif.on('finished', blob=>{
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = `adcraft-${brandName.replace(/\s+/g,'_')}-${state.ratio}.gif`;
+    a.href = url;
+    a.click();
+    URL.revokeObjectURL(url);
+    progressEl.textContent = '✓ gif downloaded';
+    showToast('Animated GIF downloaded ✓');
+    btn.disabled = false;
+    setTimeout(()=> progressEl.textContent = '', 2500);
+  });
+  gif.render();
+};
+
+document.getElementById('btnExportAll').onclick = async ()=>{
+  if(!state.campaign) return;
+  if(typeof JSZip === 'undefined'){
+    document.getElementById('gifProgress').textContent = 'ZIP engine failed to load (offline?)';
+    showToast('ZIP engine failed to load — check your connection', 'error');
+    return;
+  }
+  const btn = document.getElementById('btnExportAll');
+  const progressEl = document.getElementById('gifProgress');
+  btn.disabled = true;
+  const zip = new JSZip();
+  const pal = state.campaign.brandProfile.colorPalette;
+  const brandName = state.campaign.brandProfile.name;
+  const seedBase = state.campaign.campaignId.length;
+  const ratios = Object.keys(RATIO_DIMS);
+  let count = 0, total = ratios.length * state.campaign.variants.length;
+
+  const tmpCanvas = document.createElement('canvas');
+  const tctx = tmpCanvas.getContext('2d');
+
+  for(const ratio of ratios){
+    const dims = RATIO_DIMS[ratio];
+    tmpCanvas.width = dims.w; tmpCanvas.height = dims.h;
+    for(let vi=0; vi<state.campaign.variants.length; vi++){
+      const variant = state.campaign.variants[vi];
+      paintFrame(tctx, dims, pal, variant, brandName, state.style, seedBase + vi*7 + 3, 0);
+      const dataUrl = tmpCanvas.toDataURL('image/png').split(',')[1];
+      const fname = `${brandName.replace(/\s+/g,'_')}_${ratio}_${variant.variantType.split(' ')[0]}.png`;
+      zip.file(fname, dataUrl, { base64: true });
+      count++;
+      progressEl.textContent = `packing ${count}/${total}`;
+      await new Promise(r=>setTimeout(r, 10));
+    }
+  }
+  zip.file('campaign.json', JSON.stringify(state.campaign, null, 2));
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.download = `adcraft-${brandName.replace(/\s+/g,'_')}-all-assets.zip`;
+  a.href = url; a.click();
+  URL.revokeObjectURL(url);
+  progressEl.textContent = '✓ zip downloaded';
+  showToast('All 9 assets zipped and downloaded ✓');
+  btn.disabled = false;
+  setTimeout(()=> progressEl.textContent = '', 2500);
+};
+
+document.getElementById('btnCopyJson').onclick = ()=>{
+  if(!state.campaign) return;
+  navigator.clipboard.writeText(JSON.stringify(state.campaign, null, 2));
+  const btn = document.getElementById('btnCopyJson');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copied';
+  setTimeout(()=> btn.textContent = orig, 1200);
+};
+
+document.getElementById('modeTabs').querySelectorAll('button').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('#modeTabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(btn.dataset.mode === 'motion' && state.campaign){
+      let f = 0;
+      const iv = setInterval(()=>{
+        f++;
+        const canvas = document.getElementById('posterCanvas');
+        canvas.style.transform = `scale(${1 + Math.sin(f/12)*0.01})`;
+        canvas.style.filter = `brightness(${1 + Math.sin(f/12)*0.03})`;
+        if(f>240 || document.querySelector('#modeTabs button.active').dataset.mode !== 'motion') clearInterval(iv);
+      }, 30);
+    } else {
+      document.getElementById('posterCanvas').style.transform = 'none';
+      document.getElementById('posterCanvas').style.filter = 'none';
+    }
+  };
+});
+</script>
+</body>
+</html>
