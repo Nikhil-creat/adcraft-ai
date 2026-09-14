@@ -12,28 +12,40 @@ Email: nikhilsriramoju66@gmail.com
 
 | File | What it is |
 |---|---|
-| `adcraft-ai.html` | The full interactive app. Open it in any browser — no install, no server needed. |
-| `ARCHITECTURE.md` | The production-grade backend blueprint (Prisma schema, API routes, agentic orchestration, Docker deployment) this app is modeled on. |
+| `index.html` | The full interactive app. Open it in any browser — no install, no server needed. (Named `index.html` so GitHub Pages serves it at your repo's root URL automatically.) |
+| `manifest.json` | Makes the app installable as a PWA ("Add to Home Screen" on phones). |
+| `sw.js` | Service worker — caches the app shell so it keeps working offline after the first visit. |
+| `ARCHITECTURE.md` | The production-grade backend blueprint (Prisma schema, API routes, agentic orchestration, RAG, CNN, Docker deployment) this app is modeled on. |
 | `Dockerfile` | Container build for the Node.js API Gateway. |
 | `Dockerfile.worker` | Container build for the Python render worker. |
-| `docker-compose.yml` | One-command orchestration of frontend + API + worker + Postgres + Redis. |
+| `cnn-worker/Dockerfile` + `cnn-worker/requirements.txt` | Container build for the production CNN inference microservice (PyTorch/MobileNet). |
+| `docker-compose.yml` | One-command orchestration of frontend + API + worker + CNN service + RAG vector DB + Postgres + Redis. |
 | `README.md` | This file. |
 
 ## Key features (all working, no fake buttons)
 
 - **Neural Concept Engine** — enter a brand name + value prop, get 3 distinct creative angles (Humorous, Direct Response, Minimalist Premium).
+- **Real RAG (Retrieval-Augmented Generation)** — a local knowledge base of proven ad-copy formulas is genuinely searched via keyword/term-overlap scoring, and the best match grounds your Direct-Response headline. Runs client-side, zero network calls, zero fake numbers.
+- **Real CNN logo analysis** — upload a logo; a genuine MobileNet convolutional neural network (TensorFlow.js, on-device inference via WebGL) classifies it and returns real confidence scores, while a real pixel-histogram pass extracts dominant colors you can apply to your palette in one tap.
+- **Autonomous QA Agent** — after generating a campaign, the QA agent computes the real average accessibility score; if it's below threshold, it independently retries with a higher-contrast palette before showing you the result — a genuine decide-and-retry loop.
 - **4 trending visual styles** — Cyberpunk Neon, Glassmorphism Premium, Gradient Mesh Editorial, Minimal Luxury — all procedurally rendered, no stock templates.
 - **Dynamic Aspect-Ratio Reflow** — 1:1 feed, 9:16 reels/stories, 16:9 banner, reflowed instantly.
-- **Real accessibility scoring** — genuine WCAG contrast-ratio math, not a random number.
-- **Downloadable PNG export** — full-resolution poster, one click.
-- **Downloadable animated GIF export** — a real multi-frame animated GIF (particle drift + CTA pulse), encoded client-side and saved to your device.
-- **Batch ZIP export** — all 3 variants × 3 ratios (9 PNGs) plus the JSON spec, packed into one .zip in one click.
-- **Campaign history** — every generation auto-saves to your browser (🕘 icon); reload any past campaign, even after closing the tab.
-- **Agentic pipeline console** — watch a 5-role agent chain (Scraper → Strategist → Copywriter → Designer → QA) work through each generation, matching the real backend's orchestration design.
-- **Creative JSON schema viewer** — inspect/copy the exact structured spec behind every variant.
-- **Docker-ready backend** — `Dockerfile`, `Dockerfile.worker`, and `docker-compose.yml` included for standing up the real production stack with one command.
+- **Real accessibility scoring** — genuine WCAG contrast-ratio math.
+- **Downloadable PNG / animated GIF / batch ZIP export** — one-click downloads, all genuinely generated client-side.
+- **Campaign history** — every generation auto-saves to your browser (🕘 icon).
+- **Creative JSON schema viewer** — inspect/copy the exact structured spec, including the RAG source and QA agent's decision trace, behind every campaign.
+- **Docker-ready backend** — full production stack including a RAG vector DB and CNN inference service, one command: `docker compose up --build`.
 - **Help & Feedback panel** (`?` icon, top right) — feature guide, FAQ, and a direct feedback form to the developer.
-- Every exported asset is watermarked "AdCraft AI · N. Sriramoju" and the app footer/help panel/floating badge all credit Nikhil Chary Sriramoju with live links.
+- Every exported asset is watermarked "AdCraft AI · N. Sriramoju" and the app footer credits Nikhil Chary Sriramoju with live links.
+
+## Performance & power upgrades
+
+- **Lazy-loaded libraries** — the GIF and ZIP engines (gif.js, JSZip) only download when you actually click those export buttons, not on page load — faster first paint.
+- **Battery-aware background animation** — the shader particle field pauses automatically when you switch tabs, and runs fewer particles on small screens.
+- **Installable PWA** — "Add to Home Screen" on mobile, works offline after the first visit (via `manifest.json` + `sw.js`).
+- **Keyboard shortcuts** — `Ctrl/Cmd + Enter` to generate, `Ctrl/Cmd + S` to export PNG, `Esc` to close any panel.
+- **Auto-saved draft inputs** — your brand name/value prop/URL persist across reloads automatically.
+- **Debounced resize handling** and squared-distance math in the particle field (skips expensive sqrt calls) for smoother animation on low-power devices.
 
 ## How to run it
 

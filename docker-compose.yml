@@ -1,6 +1,6 @@
 # AdCraft AI — Hyper-Engine v2.0
 # Full-stack orchestration: Next.js frontend, Node API gateway,
-# Python render worker, Postgres, Redis.
+# Python render worker, RAG vector DB, CNN inference service, Postgres, Redis.
 # Designed & Developed by Nikhil Chary Sriramoju
 #
 # Usage:
@@ -8,6 +8,8 @@
 #   Frontend      → http://localhost:3000
 #   API Gateway   → http://localhost:4000
 #   Render Worker → http://localhost:8000
+#   Vector DB     → http://localhost:8001
+#   CNN Service   → http://localhost:8500
 
 version: "3.9"
 
@@ -34,9 +36,11 @@ services:
       - REDIS_URL=redis://redis:6379
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
+      - VECTOR_DB_URL=http://vectordb:8000
     depends_on:
       - postgres
       - redis
+      - vectordb
 
   worker:
     build:
@@ -45,9 +49,33 @@ services:
     environment:
       - DATABASE_URL=postgresql://adcraft:adcraft@postgres:5432/adcraft
       - REDIS_URL=redis://redis:6379
+      - VECTOR_DB_URL=http://vectordb:8000
+      - CNN_SERVICE_URL=http://cnn-worker:8500
     depends_on:
       - postgres
       - redis
+      - vectordb
+      - cnn-worker
+
+  # ---- RAG: vector database for the copy/brand knowledge base ----
+  vectordb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"
+    volumes:
+      - adcraft_vectordb:/chroma/chroma
+
+  # ---- CNN: brand/logo visual analysis inference service ----
+  cnn-worker:
+    build:
+      context: ./cnn-worker
+      dockerfile: Dockerfile
+    ports:
+      - "8500:8500"
+    environment:
+      - MODEL_NAME=mobilenet_v2
+    volumes:
+      - adcraft_models:/models
 
   postgres:
     image: postgres:16-alpine
@@ -67,3 +95,5 @@ services:
 
 volumes:
   adcraft_pg:
+  adcraft_vectordb:
+  adcraft_models:

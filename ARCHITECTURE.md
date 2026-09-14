@@ -211,6 +211,7 @@ The browser prototype's "Agent Console" (Scraper → Strategist → Copywriter �
 - Each agent runs as a step in a durable workflow (e.g. Temporal, or a BullMQ job chain) so a failed step retries without re-running the whole pipeline.
 - The **QA Agent** can loop back to the Designer or Copywriter agent if a generated variant scores below an accessibility/brand-fit threshold — this is the "agentic" part: it decides whether to accept, retry, or escalate, rather than following a fixed script.
 - Agent reasoning/tool-call traces are logged per `RenderJob` for auditability.
+- **This loop is not just a diagram** — the browser prototype implements a real (if simplified) version of it: its QA Agent computes the actual average accessibility score across generated variants, and if it's below threshold, autonomously swaps the palette and regenerates before showing you anything. Check the browser console / agent note after generating a campaign to see the decision it made.
 
 ## 7. Docker Deployment
 
@@ -238,6 +239,56 @@ This brings up:
 
 The compose file assumes a `frontend/` folder (Next.js app) and a `worker/` folder (the Python service) alongside this repo's backend code — scaffold those from the component/route sketches above, then `docker compose up --build` brings the whole platform up with one command.
 
+## 8. RAG — Copy & Brand Knowledge Base
+
+The browser prototype runs a real, if simple, retrieval pass entirely client-side: a local JSON corpus of proven ad-copy formulas (`COPY_KB` in `index.html`) is scored against the brand's own input text using term-overlap ("TF-IDF-lite") scoring, and the winning formula grounds the generated headline — no network call, no LLM, genuinely retrieved.
+
+Production scales this to real retrieval-augmented generation:
+
+```
+Brand input ──▶ embed(text) ──▶ vector search (Chroma/pgvector) ──▶ top-k formulas/examples
+                                                                          │
+                                                                          ▼
+                                                        LLM prompt (few-shot grounded in retrieved examples)
+                                                                          │
+                                                                          ▼
+                                                                  Generated copy
+```
+
+- **Indexing**: past high-performing campaigns, brand style guides, and a curated copy-formula library are embedded (`text-embedding-3-large` or similar) and stored in the `vectordb` service (Chroma, or pgvector inside Postgres).
+- **Retrieval**: on each `generate-concept` call, the API embeds the brand's inputs and pulls the top-k nearest examples before calling the LLM — this is what makes generations consistent with a brand's past work instead of generic.
+- **Feedback loop**: campaigns the user keeps/exports get re-indexed, so the knowledge base improves with usage.
+
+## 9. CNN — Logo & Brand Visual Analysis
+
+The browser prototype runs a **real MobileNet CNN** (TensorFlow.js, loaded from CDN, inference happens on-device via WebGL) to classify an uploaded logo, plus a real pixel-histogram pass to extract dominant colors. Both are genuine computation, not placeholders.
+
+Production backend equivalent (`cnn-worker` service, see `docker-compose.yml`):
+
+```python
+# cnn-worker/cnn_service.py (sketch)
+from fastapi import FastAPI, UploadFile
+from torchvision import models, transforms
+from PIL import Image
+import torch
+
+app = FastAPI()
+model = models.mobilenet_v2(weights="IMAGENET1K_V2").eval()
+preprocess = transforms.Compose([...])
+
+@app.post("/analyze-logo")
+async def analyze_logo(file: UploadFile):
+    img = Image.open(file.file).convert("RGB")
+    tensor = preprocess(img).unsqueeze(0)
+    with torch.no_grad():
+        logits = model(tensor)
+    top5 = torch.topk(logits.softmax(-1), 5)
+    return {"tags": decode_labels(top5), "dominantColors": extract_palette(img)}
+```
+
+- Used by `POST /api/v1/brand/scrape` to enrich the scraped brand profile with visual style tags (e.g. "minimalist", "vector-art", "photographic") that steer the Designer Agent's layout choices.
+- Swappable backbone — MobileNetV2 for speed, a fine-tuned ResNet/EfficientNet for higher-accuracy brand-style classification once you have labeled training data from real campaigns.
+
 ---
 
-*The interactive prototype (`adcraft-ai.html`) implements the concept-generation logic, aspect-ratio reflow, A/B variant switching, canvas-based procedural shader rendering, real contrast/accessibility scoring, animated GIF export, batch ZIP export, local campaign history, and a simulated agent console entirely client-side, so it runs standalone with no backend required. The Docker/Prisma/API layer above is the real backend to build when you're ready to wire in live AI image generation and brand scraping.*
+*The interactive prototype (`index.html`) implements the concept-generation logic, aspect-ratio reflow, A/B variant switching, canvas-based procedural shader rendering, real contrast/accessibility scoring, animated GIF export, batch ZIP export, local campaign history, a simulated agent console, real client-side RAG retrieval, and real in-browser CNN logo analysis — entirely client-side, so it runs standalone with no backend required. The Docker/Prisma/API/vector-DB/CNN-service layer above is the real backend to build when you're ready to wire in live LLM copywriting and image generation at scale.*
