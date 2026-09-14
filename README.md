@@ -104,4 +104,13 @@ Then repeat steps 7–11 from Option A to turn on GitHub Pages.
 
 ---
 
+
+## 👤 Author
+
+**NIKHIL CHARY SRIRAMOJU**
+- GitHub: [@Nikhil-creat](https://github.com/Nikhil-creat)
+- LinkedIn: [nikhil-chary-sriramoju](https://in.linkedin.com/in/nikhil-chary-sriramoju-95041b38a)
+- Instagram: [@nikhil__sriramoju](https://www.instagram.com/nikhil__sriramoju?stkn=MTFxdDZobmJtb2RoaA==)
+  
+
 *Questions or want a feature added? Open the app, click the `?` icon top-right, and send feedback directly — or email nikhilsriramoju66@gmail.com.*
